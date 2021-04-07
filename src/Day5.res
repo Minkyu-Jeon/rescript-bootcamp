@@ -8,7 +8,7 @@ type seatRange = {
   min: int,
 }
 
-let solve = (input, maxRow, maxCol) => {
+let mapDirectivesToSeatID = (input, maxRow, maxCol) => {
   input->Belt.Array.map(x => {
     let fbPositionDirective = x->Belt.Array.slice(~offset=0, ~len=6)
     let lrPositionDirective = x->Belt.Array.slice(~offset=7, ~len=2)
@@ -16,7 +16,7 @@ let solve = (input, maxRow, maxCol) => {
     let lastLrDirective = x->Belt.Array.getExn(9)
 
     let rowResult = fbPositionDirective->Belt.Array.reduce({min: 0, max: maxRow}, (acc, char) => {
-      if char == "F" {        
+      if char == "F" {
         {...acc, max: (acc.min + acc.max) / 2}
       } else if char == "B" {
         {...acc, min: (acc.min + acc.max) / 2 + 1}
@@ -24,7 +24,7 @@ let solve = (input, maxRow, maxCol) => {
         acc
       }
     })
-    
+
     let colResult = lrPositionDirective->Belt.Array.reduce({min: 0, max: maxCol}, (acc, char) => {
       if char == "L" {
         {...acc, max: (acc.min + acc.max) / 2}
@@ -37,8 +37,33 @@ let solve = (input, maxRow, maxCol) => {
 
     let row = lastFbDirective == "F" ? rowResult.min : rowResult.max
     let col = lastLrDirective == "L" ? colResult.min : colResult.max
-    (row * 8) + col
-  })->Belt.Array.reduce(-1, (acc, value) => { acc > value ? acc : value })
+
+    row * 8 + col
+  })
 }
 
-input->solve(127, 7)->Js.log
+let calcurateMySeatID = input => {
+  let length = input->Belt.Array.length - 2
+  
+  input
+  ->Belt.Array.slice(~offset=0, ~len=length)
+  ->Belt.Array.mapWithIndex((i, seatID) => {
+    let nextSeatID = input->Belt.Array.getExn(i + 1)
+    if nextSeatID - seatID == 2 {
+      nextSeatID - 1
+    } else {
+      0
+    }
+  })
+  ->Belt.Array.keep(x => {x > 0})
+  ->Belt.Array.get(0)
+  ->Belt.Option.getWithDefault(0)
+}
+
+let result =
+  input
+  ->mapDirectivesToSeatID(127, 7)
+  ->Belt.SortArray.stableSortBy(Pervasives.compare)
+  ->calcurateMySeatID
+
+result->Js.log
