@@ -3,36 +3,41 @@ let input =
   ->Js.String2.split("\n")
   ->Belt.Array.map(x => x->Js.String2.split(""))
 
-let countTree = (totalLine, moveRight) => {
+// 좌표를 받으면 ex) (3, 1)
+// 2차원 리스트로 변경하고
+// flatten시키고
+// 필요없는 칸 지우고
+// # 이면 1 아니면 0으로 변환해서
+// 더한다
+
+let countTree = (totalLine, traverse) => {
+  let (right, down) = traverse
+
+  let lineLenth = totalLine->Belt.Array.getExn(0)->Belt.Array.length
+
   totalLine
-  ->Belt.Array.mapWithIndex((i1, x) => {
-    let lineLength = x->Belt.Array.length
-    let tile = x
-    ->Belt.Array.keepWithIndex((_, i2) => {
-      i2 == mod(i1 * moveRight, lineLength)
-    })
-    ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault(".")
-    tile == "#" ? 1 : 0
+  ->Belt.Array.map(x => x->Belt.List.fromArray)
+  ->Belt.List.fromArray
+  ->Belt.List.flatten
+  ->Belt.List.keepWithIndex((_x, i) => {
+    let row = i / lineLenth
+    let col = mod(i, lineLenth)
+    let targetCol = right * row / down
+
+    mod(row, down) == 0 && mod(targetCol, lineLenth) == col
   })
-  ->Belt.Array.reduce(0, (acc, val) => {acc + val})
+  ->Belt.List.map(x => x == "#" ? 1 : 0)
+  ->Belt.List.reduce(0, (acc, val) => acc + val)
+  ->Belt.Int.toFloat
 }
 
-let multiplyTreeCount = (traverses, input, reducer) => {
-  traverses
-  ->Belt.List.map(x => {
-    let (right, down) = x
-    let newInput = input->Belt.Array.keepWithIndex((_x, i) => mod(i, down) == 0)
-    newInput->reducer(right)->Belt.Int.toFloat
-  })
-  ->Belt.List.reduce(1.0, (acc, treeCount) => {acc *. treeCount})
-}
+let myCountTree = input->countTree
 
-// {right: 1, down: 1}, {right: 3, down: 1}, {right: 5, down: 1}, {right: 7, down: 1}, {right: 1, down: 2}
 let traverses = list{(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)}
 
-// Js.String2 : data-first vs Js.String : data-last
+let p1 = (3, 1)->myCountTree
+p1->Js.log
 
-traverses->multiplyTreeCount(input, countTree)->Js.log
-
-// list{(3, 1)}->multiplyTreeCount(input, countTree)->Js.log
+let p2 =
+  traverses->Belt.List.map(x => x->myCountTree)->Belt.List.reduce(1.0, (acc, item) => acc *. item)
+p2->Js.log
