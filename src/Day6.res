@@ -30,11 +30,11 @@ let insersectSet = x => {
   }
 }
 
-let solve = (input, func) => {
+let solve = (input, aggrigator) => {
   input
   ->groupAnswers
   ->Belt.List.map(x => x->Belt.List.map(y => y->Belt.Set.String.fromArray))
-  ->Belt.List.map(func)
+  ->Belt.List.map(aggrigator)
   ->Belt.List.map(x => x->Belt.Set.String.size)
   ->Belt.List.reduce(0, (acc, item) => acc + item)
 }
