@@ -15,5 +15,8 @@
   "devDependencies": {
     "bs-platform": "^8.2.0",
     "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "garter": "^0.1.0"
   }
 }
