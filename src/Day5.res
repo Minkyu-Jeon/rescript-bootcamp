@@ -37,14 +37,14 @@ let mapSeatIDAndSortArray = input => {
   input->Belt.Array.map(toThisPlaneSeatId)->Belt.SortArray.stableSortBy((a, b) => b->compare(a))
 }
 
+// Belt.Array.zip 대신 아래와 같은 index pair를 만드는 방법도 있음
+// [(1, 2), (2, 3), ...]
 let toSeatIDPair = seatIds => {
   let length = seatIds->Belt.Array.length - 1
   let subSeatIds = seatIds->Belt.Array.slice(~offset=1, ~len=length)
 
   seatIds->Belt.Array.zip(subSeatIds)
 }
-
-let toDiffAndSeatID = ((seat1, seat2)) => (seat1 - seat2, seat1 - 1)
 
 let p1 = input->mapSeatIDAndSortArray->Belt.Array.getExn(0)
 
@@ -54,9 +54,8 @@ let p2 =
   input
   ->mapSeatIDAndSortArray
   ->toSeatIDPair
-  ->Belt.Array.map(toDiffAndSeatID)
-  ->Belt.Array.keep(((diff, _)) => diff == 2)
+  ->Belt.Array.keep(((seat1, seat2)) => seat1 - seat2 == 2)
   ->Belt.Array.get(0)
-  ->Belt.Option.mapWithDefault(0, ((_, seatID)) => seatID)
+  ->Belt.Option.mapWithDefault(0, ((seat1, _)) => seat1 - 1)
 
 p2->Js.log
