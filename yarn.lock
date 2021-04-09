@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@greenlabs/garter@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@greenlabs/garter/-/garter-0.5.0.tgz#b634db1daee19b7e0b15bace195bd9f6ec271579"
+  integrity sha512-zCqepd+PaNMrwv3J2r8wPHfeTsb2hKzLPaN2BgwHruObgCxdghuUVMr+GeAlVTN8x/1LTm7qfqgAYAJSjh61NQ==
+
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
@@ -263,13 +268,6 @@ fsevents@~2.3.1:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
-
-garter@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/garter/-/garter-0.1.0.tgz#703b5bed6c7f81cff1f3bda51130e4a7dc03bf79"
-  integrity sha512-1msxlC9aHGFHjiVGFeAn9U+kaOxhf3+8oU5vgUoIW5eOS7FhCGKe2fVro6ObjagvjDZn+bPWdFa5obW5+RSSYw==
-  dependencies:
-    re-vector "git+ssh://git@github.com/reason-seoul/re-vector"
 
 get-stream@^4.1.0:
   version "4.1.0"
@@ -597,10 +595,6 @@ rc@^1.2.8:
     ini "~1.3.0"
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
-
-"re-vector@git+ssh://git@github.com/reason-seoul/re-vector":
-  version "0.1.0"
-  resolved "git+ssh://git@github.com/reason-seoul/re-vector#c5310408d4717abe3d587f44c58c8ccb90ef6943"
 
 readdirp@~3.5.0:
   version "3.5.0"
