@@ -1,31 +1,58 @@
-let input =
-  Node.Fs.readFileAsUtf8Sync("input/day4.sample.txt")
-  ->Js.String2.split("\n\n")
-  ->Belt.Array.map(x => x->Js.String2.split("\n"))
+let input = Node.Fs.readFileAsUtf8Sync("input/day4.sample.txt")
+->Js.String2.split("\n\n")
+->Belt.Array.map(x => x->Js.String2.split("\n"))
+->Belt.Array.map(x => {
+  x
+  ->Belt.Array.map(y => {y->Js.String2.split(" ")})
+  ->Belt.Array.concatMany
+  ->Belt.Array.map(x => x->Js.String2.split(":"))
+})
 
 type passport = {
-  byr: option<int>,
-  iyr: option<int>,
-  eyr: option<int>,
-  hgt: option<string>,
-  hcl: option<string>,
-  ecl: option<string>,
-  pid: option<string>,
+  byr: int,
+  iyr: int,
+  eyr: int,
+  hgt: string,
+  hcl: string,
+  ecl: string,
+  pid: string,
   cid: option<string>,
 }
 
-let parseLine = x => {
-  x
-  ->Belt.Array.map(y => {
-    y->Js.String2.split(" ")
-  })
-  ->Belt.Array.concatMany
+let addFieldToMap = (map, fieldWithValue) => {
+  switch fieldWithValue {
+  | [field, value] => map->Belt.Map.String.set(field, value)
+  | _ => map
+  }
 }
 
-let toEmptyRecordAndArray = x => (
-  {byr: None, iyr: None, eyr: None, hgt: None, hcl: None, ecl: None, pid: None, cid: None},
-  x,
-)
+let fieldsToMap = (x: array<array<string>>): Belt_MapString.t<string> =>
+  x->Belt.Array.reduce(Belt.Map.String.empty, addFieldToMap)
+
+let parsePassport = (passportKeyValueMap: Belt_MapString.t<string>, validate): option<passport> => {
+  switch passportKeyValueMap->validate {
+  | Some(map) => {
+      let byr =
+        map->Belt.Map.String.getExn("byr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+      let iyr =
+        map->Belt.Map.String.getExn("iyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+      let eyr =
+        map->Belt.Map.String.getExn("eyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+
+      Some({
+        byr: byr,
+        iyr: iyr,
+        eyr: eyr,
+        hgt: map->Belt.Map.String.getExn("hgt"),
+        hcl: map->Belt.Map.String.getExn("hcl"),
+        ecl: map->Belt.Map.String.getExn("ecl"),
+        pid: map->Belt.Map.String.getExn("pid"),
+        cid: map->Belt.Map.String.get("cid"),
+      })
+    }
+  | None => None
+  }
+}
 
 let matchedStrings = (str, re) => {
   re
@@ -35,85 +62,58 @@ let matchedStrings = (str, re) => {
   ->Belt.Array.map(Js.Nullable.toOption)
 }
 
-let fillRecordField = (acc, x) => {
-  switch x->Js.String2.split(":") {
-  | [field, value] =>
-    if field == "byr" {
-      {...acc, byr: value->Belt.Int.fromString}
-    } else if field == "iyr" {
-      {...acc, iyr: value->Belt.Int.fromString}
-    } else if field == "eyr" {
-      {...acc, eyr: value->Belt.Int.fromString}
-    } else if field == "hgt" {
-      {...acc, hgt: Some(value)}
-    } else if field == "hcl" {
-      {...acc, hcl: Some(value)}
-    } else if field == "ecl" {
-      {...acc, ecl: Some(value)}
-    } else if field == "pid" {
-      {...acc, pid: Some(value)}
-    } else if field == "cid" {
-      {...acc, cid: Some(value)}
-    } else {
-      `field name '${field}' is not allowed`->Js.Exn.raiseError
+let validatePassportFormat = (x: passport): bool => {
+  x.byr >= 1920 &&
+  x.byr <= 2002 &&
+  x.iyr >= 2010 &&
+  x.iyr <= 2020 &&
+  x.eyr >= 2020 &&
+  x.eyr <= 2030 &&
+  switch x.hgt->matchedStrings(%re("/^(\d+)(cm|in)$/")) {
+  | [Some(height), Some(heightUnit)] => {
+      let heightInt = height->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+      if heightUnit == "cm" {
+        heightInt >= 150 && heightInt <= 193
+      } else if heightUnit == "in" {
+        heightInt >= 59 && heightInt <= 76
+      } else {
+        false
+      }
     }
-  | _ => "Invalid Format"->Js.Exn.raiseError
+  | _ => false
+  } &&
+  %re("/^#[\da-f]{6}$/")->Js.Re.test_(x.hcl) &&
+  %re("/^amb|blu|brn|gry|grn|hzl|oth$/")->Js.Re.test_(x.ecl) &&
+  %re("/^\d{9}$/")->Js.Re.test_(x.pid)
+}
+
+let validateMapFields = (requiredFields: array<string>, map: Belt_MapString.t<string>): option<
+  Belt_MapString.t<string>,
+> => {
+  switch requiredFields->Belt.Array.every(map->Belt.Map.String.has) {
+  | true => Some(map)
+  | false => None
   }
 }
+let validateRequiredFields = requiredFields => requiredFields->validateMapFields
+let parseWithValidateRequiredFields = (requiredFields, map) =>
+  map->parsePassport(validateRequiredFields(requiredFields))
 
-let fillRecord = ((passport, x)) => {
-  x->Belt.Array.reduce(passport, fillRecordField)
-}
+let requiredFields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
 
-let validateAllSome = x => {
-  x.byr->Belt.Option.isSome &&
-  x.iyr->Belt.Option.isSome &&
-  x.eyr->Belt.Option.isSome &&
-  x.hgt->Belt.Option.isSome &&
-  x.hcl->Belt.Option.isSome &&
-  x.ecl->Belt.Option.isSome &&
-  x.pid->Belt.Option.isSome
-}
-
-let validatePassportFormat = x => {
-  x.byr->Belt.Option.mapWithDefault(false, x => x >= 1920 && x <= 2002) &&
-  x.iyr->Belt.Option.mapWithDefault(false, x => x >= 2010 && x <= 2020) &&
-  x.eyr->Belt.Option.mapWithDefault(false, x => x >= 2020 && x <= 2030) &&
-  x.hgt->Belt.Option.mapWithDefault(false, x => {
-    switch x->matchedStrings(%re("/^(\d+)(cm|in)$/")) {
-    | [Some(height), Some(heightUnit)] => {
-        let heightInt = height->Belt.Int.fromString->Belt.Option.getWithDefault(0)
-        if heightUnit == "cm" {
-          heightInt >= 150 && heightInt <= 193
-        } else if heightUnit == "in" {
-          heightInt >= 59 && heightInt <= 76
-        } else {
-          false
-        }
-      }
-    | _ => false
-    }
-  }) &&
-  x.hcl->Belt.Option.mapWithDefault(false, x => %re("/^#[\da-f]{6}$/")->Js.Re.test_(x)) &&
-  x.ecl->Belt.Option.mapWithDefault(false, x =>
-    %re("/^amb|blu|brn|gry|grn|hzl|oth$/")->Js.Re.test_(x)
-  ) &&
-  x.pid->Belt.Option.mapWithDefault(false, x => %re("/^\d{9}$/")->Js.Re.test_(x))
-}
-
-let solve = (input, validate) => {
+let p1 =
   input
-  ->Belt.Array.map(parseLine)
-  ->Belt.Array.map(toEmptyRecordAndArray)
-  ->Belt.Array.map(fillRecord)
-  ->Belt.Array.keep(validate)
-  ->Belt.Array.size
-}
-
-let p1 = input->solve(validateAllSome)
+  ->Belt.Array.map(fieldsToMap)
+  ->Belt.Array.keepMap(parseWithValidateRequiredFields(requiredFields))
+  ->Belt.Array.length
 
 p1->Js.log
 
-let p2 = input->solve(validatePassportFormat)
+let p2 =
+  input
+  ->Belt.Array.map(fieldsToMap)
+  ->Belt.Array.keepMap(parseWithValidateRequiredFields(requiredFields))
+  ->Belt.Array.keep(validatePassportFormat)
+  ->Belt.Array.length
 
 p2->Js.log
