@@ -3,60 +3,71 @@ let input =
   ->Js.String2.split("\n")
   ->Belt.Array.map(x => x->Js.String2.split(" "))
 
+type rule = (int, int)
+
 type password = {
-  rule: (int, int),
+  rule: rule,
   char: string,
-  password: array<string>,
+  password: string, // <- 그냥 string
 }
 
-let parseRule = rule => {
-  rule
-  ->Js.String2.split("-")
-  ->Belt.Array.map(x => x->Belt.Int.fromString->Belt.Option.getWithDefault(0))
-}
+// raiseError는 아껴쓰기! option (혹은 result)로 파싱하는 것을 권장합니다.
+// https://rescript-lang.org/docs/manual/latest/api/belt/result
+let parseRule = (rule): option<rule> => {
+  let f = rule =>
+    rule
+    ->Js.String2.split("-")
+    ->Belt.Array.map(x => x->Belt.Int.fromString->Belt.Option.getWithDefault(0))
 
-let parsePassword = x => {
-  switch x {
-  | [rule, char, password] => {
-      let parsedRule = switch parseRule(rule) {
-      | [min, max] => (min, max)
-      | _ => "invalid Format: rule"->Js.Exn.raiseError
-      }
-      let passwordChars = password->Js.String2.split("")
-
-      {rule: parsedRule, char: char, password: passwordChars}
-    }
-  | _ => "invalid Format: line"->Js.Exn.raiseError
+  switch f(rule) {
+  | [min, max] => Some((min, max))
+  | _ => None
   }
 }
 
-let selectCharsInCriteria = (pwInfo: password) => {
-  let (min, max) = pwInfo.rule
-  let passwordCharsInCriteria =
-    [min, max]->Belt.Array.map(idx => pwInfo.password->Belt.Array.getExn(idx - 1))
-  {...pwInfo, password: passwordCharsInCriteria, rule: (1, 1)}
+let parsePassword = (x): option<password> => {
+  switch x {
+  | [rule, char, password] =>
+    switch parseRule(rule) {
+    | Some(rule) =>
+      Some({
+        rule: rule,
+        char: char->Js.String2.get(0),
+        password: password,
+      })
+    | None => None
+    }
+  | _ => None
+  }
 }
 
-let toMatchedCharCountAndRuleTuple = (pwInfo: password) => (
-  pwInfo.password->Belt.Array.keep(x => `${x}:` == pwInfo.char)->Belt.Array.length,
-  pwInfo.rule,
-)
-let validateMatchedCharCount = ((matchedCharCount, (min, max))) =>
+let isIncludeCharsInMinMax = (x: password): bool => {
+  let (min, max) = x.rule
+  let matchedCharCount =
+    x.password
+    ->Js.String2.split("")
+    ->Belt.Array.reduce(0, (acc, char) => {acc + (char == x.char ? 1 : 0)})
+
   matchedCharCount >= min && matchedCharCount <= max
+}
+
+let isIncludeCharOnce = (x: password): bool => {
+  let (start, end) = x.rule
+  let matchedCharCount = [start, end]->Belt.Array.keep(idx => x.password->Js.String2.get(idx - 1) == x.char)->Belt.Array.size
+
+  matchedCharCount == 1
+}
 
 let p1 =
   input
-  ->Belt.Array.map(parsePassword)
-  ->Belt.Array.map(toMatchedCharCountAndRuleTuple)
-  ->Belt.Array.keep(validateMatchedCharCount)
+  ->Belt.Array.keepMap(parsePassword)
+  ->Belt.Array.keep(isIncludeCharsInMinMax)
   ->Belt.Array.length
 p1->Js.log
 
 let p2 =
   input
-  ->Belt.Array.map(parsePassword)
-  ->Belt.Array.map(selectCharsInCriteria)
-  ->Belt.Array.map(toMatchedCharCountAndRuleTuple)
-  ->Belt.Array.keep(validateMatchedCharCount)
+  ->Belt.Array.keepMap(parsePassword)
+  ->Belt.Array.keep(isIncludeCharOnce)
   ->Belt.Array.length
 p2->Js.log
