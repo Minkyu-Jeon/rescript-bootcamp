@@ -31,25 +31,17 @@ let fieldsToMap = (x: array<array<string>>): Belt_MapString.t<string> =>
 
 let parsePassport = (passportKeyValueMap: Belt_MapString.t<string>, validate): option<passport> => {
   switch passportKeyValueMap->validate {
-  | Some(map) => {
-      let byr =
-        map->Belt.Map.String.getExn("byr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
-      let iyr =
-        map->Belt.Map.String.getExn("iyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
-      let eyr =
-        map->Belt.Map.String.getExn("eyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0)
-
-      Some({
-        byr: byr,
-        iyr: iyr,
-        eyr: eyr,
-        hgt: map->Belt.Map.String.getExn("hgt"),
-        hcl: map->Belt.Map.String.getExn("hcl"),
-        ecl: map->Belt.Map.String.getExn("ecl"),
-        pid: map->Belt.Map.String.getExn("pid"),
-        cid: map->Belt.Map.String.get("cid"),
-      })
-    }
+  | Some(map) =>
+    Some({
+      byr: map->Belt.Map.String.getExn("byr")->Belt.Int.fromString->Belt.Option.getWithDefault(0),
+      iyr: map->Belt.Map.String.getExn("iyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0),
+      eyr: map->Belt.Map.String.getExn("eyr")->Belt.Int.fromString->Belt.Option.getWithDefault(0),
+      hgt: map->Belt.Map.String.getExn("hgt"),
+      hcl: map->Belt.Map.String.getExn("hcl"),
+      ecl: map->Belt.Map.String.getExn("ecl"),
+      pid: map->Belt.Map.String.getExn("pid"),
+      cid: map->Belt.Map.String.get("cid"),
+    })
   | None => None
   }
 }
@@ -96,8 +88,10 @@ let validateMapFields = (requiredFields: array<string>, map: Belt_MapString.t<st
   }
 }
 let validateRequiredFields = requiredFields => requiredFields->validateMapFields
-let parseWithValidateRequiredFields = (requiredFields, map) =>
-  map->parsePassport(validateRequiredFields(requiredFields))
+let parseWithValidateRequiredFields = (
+  requiredFields: array<string>,
+  map: Belt_MapString.t<string>,
+): option<passport> => map->parsePassport(validateRequiredFields(requiredFields))
 
 let requiredFields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
 
