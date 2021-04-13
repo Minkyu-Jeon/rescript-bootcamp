@@ -58,16 +58,15 @@ let isIncludeCharOnce = (x: password): bool => {
   matchedCharCount == 1
 }
 
-let p1 =
+let solve = (input, validateFn) => {
   input
   ->Belt.Array.keepMap(parsePassword)
-  ->Belt.Array.keep(isIncludeCharsInMinMax)
+  ->Belt.Array.keep(validateFn)
   ->Belt.Array.length
+}
+
+let p1 = input->solve(isIncludeCharsInMinMax)
 p1->Js.log
 
-let p2 =
-  input
-  ->Belt.Array.keepMap(parsePassword)
-  ->Belt.Array.keep(isIncludeCharOnce)
-  ->Belt.Array.length
+let p2 = input->solve(isIncludeCharOnce)
 p2->Js.log
