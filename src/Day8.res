@@ -63,7 +63,7 @@ switch p1 {
 | Finite(_) => 0
 }->Js.log
 
-let p3 =
+let p2 =
   input
   ->mapWithIndex((i, x) => {
     switch x {
@@ -87,9 +87,9 @@ let p3 =
   })
   ->Vector.get(0)
 
-p3
-->Belt.Option.mapWithDefault(0, p3 => {
-  switch p3 {
+p2
+->Belt.Option.mapWithDefault(0, p2 => {
+  switch p2 {
   | Infinite(_) => 0
   | Finite(val) => val
   }
