@@ -66,6 +66,11 @@ binary-extensions@^2.0.0:
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
   integrity sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==
 
+bisect_ppx@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/bisect_ppx/-/bisect_ppx-2.6.0.tgz#02d4a21cae35be20cc1b7443d873749bd96716b2"
+  integrity sha512-qn0gT+761btyZcjguwULR3RUbn3KUe4B4IftO2aMgxGwA5wOMDv3ZcUBWIbRWfNW7xSt+fUd24w33o/EThDUfQ==
+
 boxen@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/boxen/-/boxen-4.2.0.tgz#e411b62357d6d6d36587c8ac3d5d974daa070e64"
@@ -616,6 +621,11 @@ registry-url@^5.0.0:
   integrity sha512-8acYXXTI0AkQv6RAOjE3vOaIXZkT9wo4LOFbBKYQEEnnMNBpKqdUrI6S4NT0KPIo/WVvJ5tE/X5LF/TQUf0ekw==
   dependencies:
     rc "^1.2.8"
+
+rescript-vector@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/rescript-vector/-/rescript-vector-0.1.0.tgz#cc94ab0beb438b7d24e603dbece378ed35ae3792"
+  integrity sha512-+OuZ0to7VaOuPQ0rXk3mHC1g58K5/s6xlTtf6sbB/5BJWVaQFh2z9S4sOyN7QceqS4Lr7maxZYzgDFvU4YKXuQ==
 
 responselike@^1.0.2:
   version "1.0.2"

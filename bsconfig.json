@@ -10,7 +10,10 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["@greenlabs/garter"],
+  "bs-dependencies": [
+    "@greenlabs/garter",
+    "rescript-vector"
+  ],
   "bsc-flags": [
     "-open Belt"
   ],

@@ -17,6 +17,8 @@
     "nodemon": "^2.0.4"
   },
   "dependencies": {
-    "@greenlabs/garter": "^0.5.0"
+    "@greenlabs/garter": "^0.5.0",
+    "bisect_ppx": "^2.6.0",
+    "rescript-vector": "^0.1.0"
   }
 }
