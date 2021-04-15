@@ -95,3 +95,41 @@ p2
   }
 })
 ->Js.log
+
+
+let rec solve3 = (input, acc, set, index, flag) => {
+  let optionItem = input->Vector.get(index)
+
+  if set->Belt.Set.Int.has(index) {
+    None
+  } else {
+    optionItem->Belt.Option.mapWithDefault(Some(acc), instruction => {
+      switch instruction {
+      | Acc(val) => input->solve3(acc + val, set->Belt.Set.Int.add(index), index + 1, flag)
+      | Jmp(val) =>
+        if flag {
+          let result = input->solve3(acc, set->Belt.Set.Int.add(index), index + 1, false)
+          switch result {
+          | Some(acc) => Some(acc)
+          | None => input->solve3(acc, set->Belt.Set.Int.add(index), index + val, true)
+          }
+        } else {
+          input->solve3(acc, set->Belt.Set.Int.add(index), index + val, false)
+        }
+      | Nop(val) =>
+        if flag {
+          let result = input->solve3(acc, set->Belt.Set.Int.add(index), index + val, false)
+          switch result {
+          | Some(acc) => Some(acc)
+          | None => input->solve3(acc, set->Belt.Set.Int.add(index), index + 1, true)
+          }
+        } else {
+          input->solve3(acc, set->Belt.Set.Int.add(index), index + 1, false)
+        }
+      }
+    })
+  }
+}
+
+let p2BackTracking = input->solve3(0, Belt.Set.Int.empty, 0, true)
+p2BackTracking->Js.log
