@@ -3,6 +3,8 @@ let input =
   ->Js.String2.split("\n")
   ->Belt.Array.keepMap(x => x->Belt.Int.fromString)
 
+// https://clojuredocs.org/clojure.core/reduced
+
 let rec findTargetArrayMultipliedValue = (targetArr, input, targetSum, targetLength) => {
   if targetArr->Belt.Array.length < targetLength {
     if input->Belt.Array.length == 0 {

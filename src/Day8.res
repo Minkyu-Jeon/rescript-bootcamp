@@ -40,6 +40,11 @@ let input =
   ->Belt.Array.keepMap(parseInstruction)
   ->Vector.fromArray
 
+// 상태 변환 함수
+// 종료 조건
+// 재귀
+// input = 환경: program
+// {acc, set, index} => 상태: computerState
 let rec solve = (input, acc, set, index) => {
   let optionItem = input->Vector.get(index)
 
@@ -63,6 +68,19 @@ switch p1 {
 | Finite(_) => 0
 }->Js.log
 
+/*
+
+let x = [1, 2, 3]
+
+let isEven: int => bool
+
+x->Array.map(isEven) : [false, true, false]
+x->Array.keep(x => x) : [true]
+
+x->Array.keep(isEven) : [2]
+*/
+
+// flatMap
 let p2 =
   input
   ->mapWithIndex((i, x) => {
@@ -81,11 +99,25 @@ let p2 =
   ->Vector.keepMap(Garter.Fn.identity)
   ->Vector.keep(x => {
     switch x {
-    | Infinite(_) => false
     | Finite(_) => true
+    | _ => false
     }
   })
-  ->Vector.get(0)
+  ->Vector.get(0) // (take 5 collection)
+
+/*
+// 1
+input
+->Belt.Array.map()
+->Belt.Array.map()
+->Belt.Array.keep()
+->Ta
+
+// 2
+let x = input->Belt.Array.map()
+let y = x->Belt.Array.map()
+let z = z->Belt.Array.keep()
+*/
 
 p2
 ->Belt.Option.mapWithDefault(0, p2 => {
@@ -95,7 +127,6 @@ p2
   }
 })
 ->Js.log
-
 
 let rec solve3 = (input, acc, set, index, flag) => {
   let optionItem = input->Vector.get(index)
