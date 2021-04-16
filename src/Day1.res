@@ -30,8 +30,8 @@ let rec findTargetArrayMultipliedValue = (targetArr, input, targetSum, targetLen
         )
       }
     }
-  } else if targetArr->Belt.Array.reduce(0, \"+") == targetSum {
-    Some(targetArr->Belt.Array.reduce(1, \"*"))
+  } else if targetArr->Garter.Math.sum_int == targetSum {
+    Some(targetArr->Util.multiply_int)
   } else {
     None
   }
@@ -60,8 +60,8 @@ let rec solve = (targetSum, targetLength, input) => {
 
 let solve1 = solve(2020, 2)
 let p1 = input->solve1
-p1->Js.log
+// p1->Js.log
 
 let solve2 = solve(2020, 3)
 let p2 = input->solve2
-p2->Js.log
+// p2->Js.log
