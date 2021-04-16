@@ -8,35 +8,19 @@ type resultType =
   | Finite(int)
 
 // {acc, set, index} => 상태: programState
-type programState =
-  | ProgramState1({acc: int, visitedIndex: Belt_SetInt.t, index: int})
-  | ProgramState2({acc: int, visitedIndex: Belt_SetInt.t, index: int, flag: bool})
+type programState = {acc: int, visitedIndex: Belt_SetInt.t, index: int, flag: bool}
 
-let getAcc = (state: programState) => {
-  switch state {
-  | ProgramState1({acc, _}) => acc
-  | ProgramState2({acc, _}) => acc
-  }
-}
-
-let getIndex = (state: programState) => {
-  switch state {
-  | ProgramState1({index, _}) => index
-  | ProgramState2({index, _}) => index
-  }
-}
-
-let getvisitedIndex = (state: programState) => {
-  switch state {
-  | ProgramState1({visitedIndex, _}) => visitedIndex
-  | ProgramState2({visitedIndex, _}) => visitedIndex
-  }
+type instructionFn = {
+  acc: (programState, int) => programState,
+  jmp: (programState, int) => programState,
+  nop: programState => programState,
 }
 
 type programEnv = {
   input: Vector.t<instruction>,
-  transformStateFn: (programState, programState => resultType, instruction) => resultType,
+  transformStateFn: (programState, instructionFn, instruction) => programState,
   terminateCriteriaFn: programState => bool,
+  instructionFn: instructionFn,
 }
 
 let mapWithIndex = (vec, f) => {
@@ -72,140 +56,86 @@ let input =
   ->Belt.Array.keepMap(parseInstruction)
   ->Vector.fromArray
 
+// 각 명령어의 실제 동작
+let acc = ({acc, visitedIndex, index, flag}, val) => {
+  {
+    acc: acc + val,
+    visitedIndex: visitedIndex->Belt.Set.Int.add(index),
+    index: index + 1,
+    flag: flag,
+  }
+}
+let jmp = ({acc, visitedIndex, index, flag}, val) => {
+  {acc: acc, visitedIndex: visitedIndex->Belt.Set.Int.add(index), index: index + val, flag: flag}
+}
+let nop = ({acc, visitedIndex, index, flag}) => {
+  {acc: acc, visitedIndex: visitedIndex->Belt.Set.Int.add(index), index: index + 1, flag: flag}
+}
+
 // 상태 변환 함수
-let transformState = (state, run, instruction) => {
-  switch state {
-  | ProgramState1({acc, visitedIndex, index}) =>
-    switch instruction {
-    | Acc(val) =>
-      run(
-        ProgramState1({
-          acc: acc + val,
-          visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-          index: index + 1,
-        }),
-      )
-    | Jmp(val) =>
-      run(
-        ProgramState1({
-          acc: acc,
-          visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-          index: index + val,
-        }),
-      )
-    | Nop(_) =>
-      run(
-        ProgramState1({
-          acc: acc,
-          visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-          index: index + 1,
-        }),
-      )
-    }
-  | ProgramState2({acc, visitedIndex, index, flag}) =>
-    switch instruction {
-    | Acc(val) =>
-      run(
-        ProgramState2({
-          acc: acc + val,
-          visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-          index: index + 1,
-          flag: flag,
-        }),
-      )
-    | Jmp(val) =>
-      if flag {
-        let result = run(
-          ProgramState2({
-            acc: acc,
-            visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-            index: index + 1,
-            flag: false,
-          }),
-        )
-        switch result {
-        | Finite(acc) => Finite(acc)
-        | Infinite(_) =>
-          run(
-            ProgramState2({
-              acc: acc,
-              visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-              index: index + val,
-              flag: true,
-            }),
-          )
-        }
-      } else {
-        run(
-          ProgramState2({
-            acc: acc,
-            visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-            index: index + val,
-            flag: false,
-          }),
-        )
-      }
-    | Nop(val) =>
-      if flag {
-        let result = run(
-          ProgramState2({
-            acc: acc,
-            visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-            index: index + val,
-            flag: false,
-          }),
-        )
-        switch result {
-        | Finite(acc) => Finite(acc)
-        | Infinite(_) =>
-          run(
-            ProgramState2({
-              acc: acc,
-              visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-              index: index + 1,
-              flag: true,
-            }),
-          )
-        }
-      } else {
-        run(
-          ProgramState2({
-            acc: acc,
-            visitedIndex: visitedIndex->Belt.Set.Int.add(index),
-            index: index + 1,
-            flag: false,
-          }),
-        )
-      }
-    }
+// (programState, instructionFn, instruction) => programState
+let transformState = (state, instructionFn, instruction) => {
+  switch instruction {
+  | Acc(val) => state->instructionFn.acc(val)
+  | Jmp(val) =>
+    state.flag
+      ? {...state, flag: false}->instructionFn.nop
+      : {...state, flag: false}->instructionFn.jmp(val)
+  | Nop(val) =>
+    state.flag
+      ? {...state, flag: false}->instructionFn.jmp(val)
+      : {...state, flag: false}->instructionFn.nop
   }
 }
 
 // 종료 조건
-let terminateCriteria = (state: programState) => {
-  state->getvisitedIndex->Belt.Set.Int.has(state->getIndex)
-}
+let terminateCriteria = (state: programState) => state.visitedIndex->Belt.Set.Int.has(state.index)
 
 // 재귀
 let rec run = (env: programEnv, state: programState): resultType => {
   if env.terminateCriteriaFn(state) {
-    Infinite(state->getAcc)
+    Infinite(state.acc)
   } else {
     env.input
-    ->Vector.get(state->getIndex)
-    ->Belt.Option.mapWithDefault(Finite(state->getAcc), transformState(state, run(env)))
+    ->Vector.get(state.index)
+    ->Belt.Option.mapWithDefault(Finite(state.acc), instruction => {
+      let nextState = transformState(state, env.instructionFn, instruction)
+      if state.flag {
+        switch run(env, nextState) {
+        | Finite(acc) => Finite(acc)
+        | Infinite(_) => {
+            let nextState = transformState({...state, flag: false}, env.instructionFn, instruction)
+            let nextState = {...nextState, flag: true}
+            run(env, nextState)
+          }
+        }
+      } else {
+        run(env, nextState)
+      }
+    })
+  }
+}
+
+let getResultValue = (result: resultType) => {
+  switch result {
+  | Infinite(acc) => acc
+  | Finite(acc) => acc
   }
 }
 
 // input = 환경: program
-let env = {input: input, transformStateFn: transformState, terminateCriteriaFn: terminateCriteria}
+let env = {
+  input: input,
+  transformStateFn: transformState,
+  terminateCriteriaFn: terminateCriteria,
+  instructionFn: {acc: acc, jmp: jmp, nop: nop},
+}
 
-let p1_1 = env->run(ProgramState1({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0}))
+let p1 = env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0, flag: false})
+p1->getResultValue->Js.log
 
-switch p1_1 {
-| Infinite(val) => val
-| Finite(_) => 0
-}->Js.log
+let p2BackTracking = env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0, flag: true})
+p2BackTracking->getResultValue->Js.log
 
 /*
 let x = [1, 2, 3]
@@ -232,8 +162,9 @@ let p2 =
           input: input,
           transformStateFn: transformState,
           terminateCriteriaFn: terminateCriteria,
+          instructionFn: {acc: acc, jmp: jmp, nop: nop},
         }
-        env->run(ProgramState1({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0}))
+        env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0, flag: false})
       })
     | Nop(val) =>
       input
@@ -243,8 +174,9 @@ let p2 =
           input: input,
           transformStateFn: transformState,
           terminateCriteriaFn: terminateCriteria,
+          instructionFn: {acc: acc, jmp: jmp, nop: nop},
         }
-        env->run(ProgramState1({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0}))
+        env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0, flag: false})
       })
     }
   })
@@ -255,15 +187,9 @@ let p2 =
     | _ => false
     }
   })
-  ->Vector.get(0) // (take 5 collection)
-p2
-->Belt.Option.mapWithDefault(0, p2 => {
-  switch p2 {
-  | Infinite(_) => 0
-  | Finite(val) => val
-  }
-})
-->Js.log
+  ->Vector.get(0)
+// (take 5 collection)
+p2->Belt.Option.mapWithDefault(0, getResultValue)->Js.log
 
 /*
 // 1
@@ -278,15 +204,3 @@ let x = input->Belt.Array.map()
 let y = x->Belt.Array.map()
 let z = z->Belt.Array.keep()
 */
-
-let p2BackTracking =
-  env->run(ProgramState2({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0, flag: true}))
-
-switch p2BackTracking {
-| Infinite(_) => 0
-| Finite(val) => val
-}->Js.log
-
-
-// 환경 주입시 별도의 함수를 주입하는게 나을듯..
-// run에서 조금만 수정하면
