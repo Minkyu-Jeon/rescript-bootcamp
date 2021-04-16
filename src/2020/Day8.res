@@ -51,7 +51,7 @@ let parseInstruction: string => option<instruction> = x => {
 // js -> parseInt: string => int | NaN
 // string => array<string> => array<option<instruction>> => vector<instruction>
 let input =
-  Node.Fs.readFileAsUtf8Sync("input/day8.sample.txt")
+  Node.Fs.readFileAsUtf8Sync("input/2020/day8.sample.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.keepMap(parseInstruction)
   ->Vector.fromArray

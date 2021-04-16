@@ -30,7 +30,7 @@ let preprocess = str => {
   ->Belt.Map.String.fromArray
 }
 
-let input = Node.Fs.readFileAsUtf8Sync("input/day7.sample.txt")->preprocess
+let input = Node.Fs.readFileAsUtf8Sync("input/2020/day7.sample.txt")->preprocess
 
 let rec solve1 = (input, targetBagName, acc) => {
   input->Belt.Map.String.reduce(acc, (acc, k, v) => {

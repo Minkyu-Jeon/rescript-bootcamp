@@ -1,4 +1,4 @@
-let input = Util.parseInputByNewlineMapToInt("input/day9.sample.txt")
+let input = Util.parseInputByNewlineMapToInt("input/2020/day9.sample.txt")
 
 let rec solve = (input, preambleLength) => {
   if input->Array.length < preambleLength + 1 {

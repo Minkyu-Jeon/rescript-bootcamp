@@ -1,5 +1,5 @@
 let input =
-  Node.Fs.readFileAsUtf8Sync("input/day3.sample.txt")
+  Node.Fs.readFileAsUtf8Sync("input/2020/day3.sample.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(x => x->Js.String2.split(""))
 

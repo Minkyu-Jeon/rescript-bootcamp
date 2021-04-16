@@ -26,4 +26,4 @@ lib/bs
 .bsb.lock
 node_modules/
 package-lock.json
-src/*.bs.js
+src/**/*.bs.js
