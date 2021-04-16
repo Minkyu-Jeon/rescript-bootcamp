@@ -8,7 +8,7 @@ let rec solve = (input, preambleLength) => {
       input
       ->Array.get(preambleLength)
       ->Option.flatMap(x => {
-        let solveFn = Day1.solve(x, 2)
+        let solveFn = TargetArrayMultipliedValue.find(x, 2)
         let data = input->Array.slice(~offset=0, ~len=preambleLength)->solveFn
         switch data {
         | Some(_) => None
