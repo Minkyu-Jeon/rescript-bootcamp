@@ -7,6 +7,19 @@ type resultType =
   | Infinite(int)
   | Finite(int)
 
+// {acc, set, index} => 상태: programState
+type programState = {
+  acc: int,
+  visitedIndex: Belt_SetInt.t,
+  index: int,
+}
+
+type programEnv = {
+  input: Vector.t<instruction>,
+  transformStateFn: (programState, programState => resultType, instruction) => resultType,
+  terminateCriteriaFn: programState => bool,
+}
+
 let mapWithIndex = (vec, f) => {
   let (_, acc) = vec->Vector.reduce((0, Vector.make()), ((i, newVec), item) => {
     (i + 1, Vector.push(newVec, f(i, item)))
@@ -41,29 +54,36 @@ let input =
   ->Vector.fromArray
 
 // 상태 변환 함수
-// 종료 조건
-// 재귀
-// input = 환경: program
-// {acc, set, index} => 상태: computerState
-let rec solve = (input, acc, set, index) => {
-  let optionItem = input->Vector.get(index)
-
-  if set->Belt.Set.Int.has(index) {
-    Infinite(acc)
-  } else {
-    optionItem->Belt.Option.mapWithDefault(Finite(acc), item => {
-      switch item {
-      | Acc(val) => input->solve(acc + val, set->Belt.Set.Int.add(index), index + 1)
-      | Jmp(val) => input->solve(acc, set->Belt.Set.Int.add(index), index + val)
-      | Nop(_) => input->solve(acc, set->Belt.Set.Int.add(index), index + 1)
-      }
-    })
+let transformState = ({acc, visitedIndex, index}, run, instruction) => {
+  switch instruction {
+  | Acc(val) =>
+    run({acc: acc + val, visitedIndex: visitedIndex->Belt.Set.Int.add(index), index: index + 1})
+  | Jmp(val) =>
+    run({acc: acc, visitedIndex: visitedIndex->Belt.Set.Int.add(index), index: index + val})
+  | Nop(_) => run({acc: acc, visitedIndex: visitedIndex->Belt.Set.Int.add(index), index: index + 1})
   }
 }
 
-let p1 = input->solve(0, Belt.Set.Int.empty, 0)
+// 종료 조건
+let terminateCriteria = state => state.visitedIndex->Belt.Set.Int.has(state.index)
 
-switch p1 {
+// 재귀
+let rec run = (env: programEnv, state: programState): resultType => {
+  if env.terminateCriteriaFn(state) {
+    Infinite(state.acc)
+  } else {
+    env.input
+    ->Vector.get(state.index)
+    ->Belt.Option.mapWithDefault(Finite(state.acc), transformState(state, run(env)))
+  }
+}
+
+// input = 환경: program
+let env = {input: input, transformStateFn: transformState, terminateCriteriaFn: terminateCriteria}
+
+let p1_1 = env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0})
+
+switch p1_1 {
 | Infinite(val) => val
 | Finite(_) => 0
 }->Js.log
@@ -89,11 +109,25 @@ let p2 =
     | Jmp(val) =>
       input
       ->Vector.set(i, Nop(val))
-      ->Belt.Option.map(input => input->solve(0, Belt.Set.Int.empty, 0))
+      ->Belt.Option.map(input => {
+        let env = {
+          input: input,
+          transformStateFn: transformState,
+          terminateCriteriaFn: terminateCriteria,
+        }
+        env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0})
+      })
     | Nop(val) =>
       input
       ->Vector.set(i, Jmp(val))
-      ->Belt.Option.map(input => input->solve(0, Belt.Set.Int.empty, 0))
+      ->Belt.Option.map(input => {
+        let env = {
+          input: input,
+          transformStateFn: transformState,
+          terminateCriteriaFn: terminateCriteria,
+        }
+        env->run({acc: 0, visitedIndex: Belt.Set.Int.empty, index: 0})
+      })
     }
   })
   ->Vector.keepMap(Garter.Fn.identity)
