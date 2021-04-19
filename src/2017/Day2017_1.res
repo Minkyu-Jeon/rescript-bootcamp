@@ -14,3 +14,16 @@ let solve = input => {
 }
 
 input->solve->Js.log
+
+
+let solve2 = (input) => {
+  let len = input->Array.length
+  input
+  ->Array.slice(~offset=0, ~len=len / 2)
+  ->Array.zip(input->Array.slice(~offset=len / 2, ~len=len / 2))
+  ->Array.reduce(0, (acc, (a, b)) => {
+    acc + (a == b ? a + b : 0)
+  })
+}
+
+input->solve2->Js.log
