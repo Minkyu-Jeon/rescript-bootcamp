@@ -6,11 +6,6 @@ let parse = input => {
   ->Array.map(x => x->Array.keep(x => x != "")->List.fromArray)
   ->Array.reduce(Map.String.empty, (acc, item) => {
     let d = switch item {
-    | list{_, weight} =>
-      Some({
-        weight: weight->Int.fromString->Option.getExn,
-        children: Set.String.empty,
-      })
     | list{_, weight, ...children} =>
       Some({
         weight: weight->Int.fromString->Option.getExn,
@@ -49,34 +44,39 @@ let rec addAllChildren = (input, key, totalAcc) => {
   }
 }
 
-let getLeastFrequentDiffPair = (arr: array<(int, string)>) => {
+let allSome = arr => {
+  let keptMap = arr->List.keepMap(Garter.Fn.identity)
+  switch keptMap->List.length == arr->List.length {
+  | true => Some(keptMap)
+  | false => None
+  }
+}
+
+let parseFrequencyMap = arr => {
   let frequency =
     arr
-    ->Array.reduce(Map.Int.empty, (acc, (sum, _)) => {
-      // 빈도 계산
-      let cnt = acc->Map.Int.getWithDefault(sum, 0)
-      acc->Map.Int.set(sum, cnt + 1)
-    })
-    ->Map.Int.reduce(Map.Int.empty, (acc, k, v) => {
-      // key - value를 뒤집어줌
-      acc->Map.Int.set(v, k)
-    })
-
-  let map = arr->Map.Int.fromArray
-
-  switch frequency->Map.Int.size <= 1 {
-  | true => None
-  | false =>
-    frequency
-    ->Map.Int.maximum
-    ->Option.flatMap(((_, maxVal)) =>
-      frequency
-      ->Map.Int.minimum
-      ->Option.flatMap(((_, minVal)) =>
-        map->Map.Int.get(minVal)->Option.map(key => (key, minVal - maxVal))
-      )
+    ->Array.reduce(Map.Int.empty, (acc, (sum, _)) =>
+      acc->Map.Int.set(sum, acc->Map.Int.getWithDefault(sum, 0) + 1)
     )
-  }
+    ->Map.Int.reduce(Map.Int.empty, (acc, k, v) => acc->Map.Int.set(v, k))
+
+  frequency->Map.Int.size <= 1 ? None : Some(frequency)
+}
+
+let getLeastFrequentDiffPair = (arr: array<(int, string)>) => {
+  arr
+  ->parseFrequencyMap
+  ->Option.flatMap(freq => {
+    list{freq->Map.Int.maximum, freq->Map.Int.minimum}
+    ->allSome
+    ->Option.flatMap(l => {
+      switch l {
+      | list{(_, maxVal), (_, minVal)} =>
+        arr->Map.Int.fromArray->Map.Int.get(minVal)->Option.map(key => (key, minVal - maxVal))
+      | _ => None
+      }
+    })
+  })
 }
 
 let rec solve2 = (key, diff) => {
