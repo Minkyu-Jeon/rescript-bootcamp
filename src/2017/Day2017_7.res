@@ -29,6 +29,38 @@ let solve1 = input => {
 let p1 = input->Map.String.keep((_, v) => !(v.children->Set.String.isEmpty))->solve1
 p1->Js.log
 
+let mm = () => {
+  let m = ref(Map.String.empty)
+
+  let rec addAllChildren = (input, key, totalAcc) => {
+    switch m.contents->Map.String.get(key) {
+    | Some(value) => value
+    | None => {
+        // 해당 키 기준으로 하위 항목들을 모두 더해줌
+        let item = input->Map.String.getExn(key)
+        let children = item.children
+
+        switch children->Set.String.isEmpty {
+        | true => item.weight
+        | false => {
+            let value =
+              item.weight +
+              children->Set.String.reduce(totalAcc, (acc, key) => {
+                acc + input->addAllChildren(key, totalAcc)
+              })
+
+            m := m.contents->Map.String.set(key, value)
+            value
+          }
+        }
+      }
+    }
+  }
+
+  addAllChildren
+}
+let memoizedAddAllChildren = mm()
+
 let rec addAllChildren = (input, key, totalAcc) => {
   // 해당 키 기준으로 하위 항목들을 모두 더해줌
   let item = input->Map.String.getExn(key)
@@ -79,6 +111,8 @@ let getLeastFrequentDiffPair = (arr: array<(int, string)>) => {
   })
 }
 
+// memoizedAddAllChildren: 1187회 호출
+// addAllChildren: 1415회 호출
 let rec solve2 = (key, diff) => {
   let item = input->Map.String.getExn(key)
   let children = item.children->Set.String.toArray
